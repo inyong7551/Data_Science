@@ -1,5 +1,6 @@
-import numpy as np
 import sys
+
+import numpy as np
 
 
 def preprocess(path):
@@ -49,14 +50,14 @@ class Apriori:
 
     def initialize(self):
         li = np.unique(sum(self.db.database, []))
-        init_set = np.empty((0, 2))
+        init_set = []
         for element in li:
             cnt = 0
             for data in self.db.database:
                 if np.isin(element, data):
                     cnt += 1
             if cnt >= self.support:
-                init_set = np.append(init_set, np.array([[element, cnt]]), axis=0)
+                init_set.append(np.array([[element], cnt], dtype=object))
 
         return init_set
 
@@ -83,7 +84,6 @@ class Apriori:
 
     def pruning(self, freqs):
         cand = freqs.copy()
-
         for i in range(0, len(freqs)):
             if freqs[i][1] < self.support:
                 cand.pop(i - len(freqs) + len(cand))
@@ -139,10 +139,23 @@ class Analyzer:
                     array_x = np.asarray(self.freq[level][x][0], dtype=int)
                     array_y = np.asarray(self.freq[level][y][0], dtype=int)
 
-                    first = "{" + str(array_x) + "}\t" + "{" + str(array_y) + "}\t" + str(
-                        sup) + "\t" + str(conf_xy) + "\n"
-                    second = "{" + str(array_y) + "}\t" + "{" + str(
-                        array_x) + "}\t" + str(sup) + "\t" + str(conf_yx) + "\n"
+                    element_x = "{"
+                    element_y = "{"
+                    for i in array_x:
+                        element_x += str(i)
+                        if not i == array_x[-1]:
+                            element_x += ", "
+
+                    for i in array_y:
+                        element_y += str(i)
+                        if not i == array_y[-1]:
+                            element_y += ", "
+
+                    element_x += "}\t"
+                    element_y += "}\t"
+
+                    first = element_x + element_y + str(sup) + "\t" + str(conf_xy) + "\n"
+                    second = element_y + element_x + str(sup) + "\t" + str(conf_yx) + "\n"
                     res += first
                     res += second
 
@@ -157,9 +170,12 @@ db = preprocess(input_path)
 app = Apriori(db, int(support) * 0.01 * len(db))
 freqs = app.mining()
 
+for i in range(0, len(freqs)):
+    print("Length " + str(i+1) + ": " + str(len(freqs[i])))
+
 analyzer = Analyzer(freqs, len(app.db.database))
 res = ""
 for i in range(0, len(freqs)):
-    res += analyzer.analyze(i)
+   res += analyzer.analyze(i)
 
 recording(output_path, res)

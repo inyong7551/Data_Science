@@ -49,7 +49,7 @@ class Apriori:
         self.support = sup
 
     def initialize(self):
-        li = np.unique(sum(self.db.database, []))
+        li = np.sort(np.unique(sum(self.db.database, [])))
         init_set = []
         for element in li:
             cnt = 0
@@ -174,9 +174,6 @@ output_path = sys.argv[3]
 db = preprocess(input_path)
 app = Apriori(db, int(support) * 0.01 * len(db))
 freqs = app.mining()
-
-for i in range(0, len(freqs)):
-    print("Length " + str(i+1) + ": " + str(len(freqs[i])))
 
 analyzer = Analyzer(freqs, len(app.db.database))
 res = []

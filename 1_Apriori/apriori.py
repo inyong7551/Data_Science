@@ -20,9 +20,9 @@ def preprocess(path):
 
 def recording(path, res):
     output_ = open(path, 'w')
-    res = res.split('\n')
-    for line in res:
-        output_.write(line + "\n")
+    for set_ in res:
+        for line in set_:
+            output_.write(line + "\n")
 
     output_.close()
     print("Task Completed.")
@@ -117,49 +117,54 @@ class Analyzer:
         self.size = size
 
     def analyze(self, level):
-        res = ""
-        for x in range(0, len(self.freq[level])):
-            for y in range(x + 1, len(self.freq[level])):
-                itemset = np.union1d(self.freq[level][x][0], self.freq[level][y][0])
-                if not len(itemset) == level + 2:
-                    continue
-                sup = 0
+        res = []
 
-                if level < len(self.freq) - 1:
-                    for data in self.freq[level + 1]:
-                        if np.array_equiv(itemset, data[0]):
-                            sup = data[1]
+        n = int((level + 1) / 2) + 1
+        for i in range(1, n):
+            set_x = self.freq[i - 1]
+            set_y = self.freq[level - i]
 
-                    if sup == 0:
+            for x in set_x:
+                for y in set_y:
+                    items = np.union1d(x[0], y[0])
+                    if not len(items) == level + 1:
                         continue
 
-                    conf_xy = format(sup / self.freq[level][x][1] * 100, ".2f")
-                    conf_yx = format(sup / self.freq[level][y][1] * 100, ".2f")
-                    sup = format(sup / self.size * 100, ".2f")
-                    array_x = np.asarray(self.freq[level][x][0], dtype=int)
-                    array_y = np.asarray(self.freq[level][y][0], dtype=int)
+                    for data in self.freq[level]:
+                        sup = 0
+                        if np.array_equiv(items, data[0]):
+                            sup = data[1]
 
-                    element_x = "{"
-                    element_y = "{"
-                    for i in array_x:
-                        element_x += str(i)
-                        if not i == array_x[-1]:
-                            element_x += ", "
+                        if sup == 0:
+                            continue
 
-                    for i in array_y:
-                        element_y += str(i)
-                        if not i == array_y[-1]:
-                            element_y += ", "
+                        conf_xy = format(sup / x[1] * 100, ".2f")
+                        conf_yx = format(sup / y[1] * 100, ".2f")
+                        sup = format(sup / self.size * 100, ".2f")
+                        array_x = np.asarray(x[0], dtype=int)
+                        array_y = np.asarray(y[0], dtype=int)
 
-                    element_x += "}\t"
-                    element_y += "}\t"
+                        element_x = "{"
+                        element_y = "{"
+                        for i in array_x:
+                            element_x += str(i)
+                            if not i == array_x[-1]:
+                                element_x += ", "
 
-                    first = element_x + element_y + str(sup) + "\t" + str(conf_xy) + "\n"
-                    second = element_y + element_x + str(sup) + "\t" + str(conf_yx) + "\n"
-                    res += first
-                    res += second
+                        for i in array_y:
+                            element_y += str(i)
+                            if not i == array_y[-1]:
+                                element_y += ", "
 
-        return res
+                        element_x += "}\t"
+                        element_y += "}\t"
+
+                        first = element_x + element_y + str(sup) + "\t" + str(conf_xy)
+                        second = element_y + element_x + str(sup) + "\t" + str(conf_yx)
+                        res.append(first)
+                        res.append(second)
+
+        return set(res)
 
 
 support = sys.argv[1]
@@ -174,8 +179,8 @@ for i in range(0, len(freqs)):
     print("Length " + str(i+1) + ": " + str(len(freqs[i])))
 
 analyzer = Analyzer(freqs, len(app.db.database))
-res = ""
-for i in range(0, len(freqs)):
-   res += analyzer.analyze(i)
+res = []
+for i in range(1, len(freqs)):
+   res.append(analyzer.analyze(i))
 
 recording(output_path, res)
